@@ -977,8 +977,14 @@
     // Reflect the query back into the input so the user can refine + re-run.
     els.input.value = briefing.query || "";
     currentQuery = briefing.query || "";
-    // Surface any saved notes for this past briefing.
-    revealNotes(typeof briefing.notes === "string" ? briefing.notes : "");
+    // Demo briefings are read-only on the backend; suppress the notes UI
+    // so autosave never fires and 403s on every keystroke.
+    if (briefing.is_demo) {
+      if (els.notesSection) els.notesSection.hidden = true;
+      if (els.createNoteBtn) els.createNoteBtn.disabled = true;
+    } else {
+      revealNotes(typeof briefing.notes === "string" ? briefing.notes : "");
+    }
     // Sync the navbar breadcrumb.
     if (els.folioBreadcrumb) {
       els.folioBreadcrumb.textContent = `Briefing · ${briefing.query || "(untitled)"}`;
@@ -1157,8 +1163,10 @@
       if (!els.notesSection || !els.notesInput) return;
       if (els.notesSection.hidden) els.notesSection.hidden = false;
       els.notesSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      // Focus after the scroll kicks off so the textarea is keyboard-ready.
-      setTimeout(() => els.notesInput.focus(), 150);
+      // Wait for the smooth-scroll to finish before focusing the textarea,
+      // and use preventScroll so the focus doesn't trigger a second
+      // instant scroll that snaps the page mid-animation.
+      setTimeout(() => els.notesInput.focus({ preventScroll: true }), 450);
     });
   }
 

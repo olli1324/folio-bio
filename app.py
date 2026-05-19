@@ -140,7 +140,7 @@ async def api_briefing(briefing_id: str, request: Request) -> JSONResponse:
       - Owner (briefing.user_id == caller.user_id): always allowed.
       - Demo (briefing.is_demo == true): allowed for anyone.
       - Anonymous briefing (user_id is null): allowed for anyone with the id
-        (link-share model — same as before auth landed).
+        (link-share model - same as before auth landed).
       - Someone else's owned briefing: 404 (not 403, to avoid disclosing existence).
     """
     if storage is None:

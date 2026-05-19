@@ -6,3 +6,8 @@ venv/
 .DS_Store
 *.egg-info/
 .pytest_cache/
+
+docs/biolitagent_brief_v1.md
+docs/biolitagent_spec_v1.md
+docs/hackathon_doc_v1.md
+docs/hackathon_doc_v2.md

@@ -228,8 +228,15 @@ a:hover { color: var(--folio-primary-deep); }
   padding: 2px 6px; border-radius: 2px;
 }
 
-/* Recent briefings list */
-.f-brief-list { display: flex; flex-direction: column; gap: 4px; }
+/* Recent briefings list — scrollable so a long history doesn't push the
+ * auth panel below the sidebar viewport. flex:1 + min-height:0 lets the
+ * list shrink inside the sidebar flex column instead of expanding past it. */
+.f-brief-list {
+  display: flex; flex-direction: column; gap: 4px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
 .f-brief-item {
   padding: 10px 12px; border-radius: var(--r-sm); cursor: pointer;
   transition: background 120ms ease; display: block; text-decoration: none;

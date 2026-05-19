@@ -559,17 +559,50 @@ body.has-run .hero-island {
   min-width: 0;
 }
 
-/* Workspace: two-pane layout */
+/* Workspace: two-pane layout. --papers-w is the papers-column width and
+ * is overridden to ~44px when .is-papers-collapsed so the pane shrinks to
+ * a thin strip carrying only the toggle chevron. */
 .workspace {
+  --papers-w: 360px;
   flex: 1;
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: var(--papers-w) 1fr;
   gap: 1px;
   background: var(--border);
   min-height: 0;
+  transition: grid-template-columns 220ms ease;
 }
+.workspace.is-papers-collapsed { --papers-w: 44px; }
+.workspace.is-papers-collapsed .papers-pane > *:not(.papers-pane-collapse) {
+  display: none;
+}
+
+/* Floating chevron at the top-right of the papers pane. Stays clickable
+ * when the pane is collapsed (positioned inside the 44px strip). */
+.papers-pane-collapse {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+  z-index: 5;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--folio-card);
+  border: 1px solid var(--folio-rule-strong);
+  color: var(--folio-ink-soft);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--f-mono); font-size: 12px; line-height: 1;
+  cursor: pointer; box-shadow: var(--sh-1);
+  transition: background 120ms ease, color 120ms ease, transform 220ms ease, right 220ms ease;
+}
+.papers-pane-collapse:hover { background: var(--folio-paper-deep); color: var(--folio-ink); }
+.workspace.is-papers-collapsed .papers-pane-collapse {
+  right: 50%;
+  transform: translateX(50%) rotate(180deg);
+}
+
 .papers-pane,
 .briefing-pane {
+  position: relative;
   background: var(--pane);
   padding: 16px 20px;
   overflow-y: auto;

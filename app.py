@@ -183,12 +183,31 @@ def _logo_data_uri() -> str | None:
 
 
 def _enrich_briefing_for_pdf(briefing: dict) -> dict:
-    """Add phase labels to trial_info so the Jinja template can show them
-    as 'Phase III' rather than the raw 'PHASE3' enum string."""
+    """Reconstitute fields the Jinja template expects but that Pydantic's
+    `model_dump()` strips out before persistence:
+
+      - trial_info.phase_label - human label for the enum value
+      - key_papers[*].citation / .url - Paper has these as @property, which
+        model_dump() drops. Without them the PDF's Key papers list renders
+        as empty <li></li> items.
+    """
     for compound in briefing.get("top_compounds", []) or []:
         info = compound.get("trial_info") or {}
         if info:
             info["phase_label"] = _PHASE_LABEL.get(info.get("highest_phase") or "", "")
+
+    for paper in briefing.get("key_papers", []) or []:
+        pmid = (paper.get("pmid") or "").strip()
+        if pmid and not paper.get("url"):
+            paper["url"] = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+        if not paper.get("citation"):
+            authors = paper.get("authors") or []
+            lead = authors[0] if authors else "Unknown"
+            suffix = " et al." if len(authors) > 1 else ""
+            paper["citation"] = (
+                f"{lead}{suffix} ({paper.get('year', '')}). "
+                f"{paper.get('title', '')}. {paper.get('journal', '')}."
+            )
     return briefing
 
 

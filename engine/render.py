@@ -81,7 +81,7 @@ def briefing_to_markdown(briefing: Briefing) -> str:
                 lines.append(f"   {badge}")
             if compound.supporting_pmids:
                 pmids = ", ".join(compound.supporting_pmids)
-                lines.append(f"   _Supporting PMIDs: {pmids}_")
+                lines.append(f"   Supporting PMIDs: {pmids}")
             lines.append("")
 
     if briefing.mechanisms:

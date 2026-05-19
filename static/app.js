@@ -1178,6 +1178,22 @@
     if (!els.downloadDropdown || els.downloadDropdown.contains(e.target)) return;
     closeDownloadMenu();
   });
+  // Papers pane collapse — same persistence pattern as the sidebar chevron,
+  // but the workspace is a flex/grid child inside main-content (not part of
+  // .f-shell), so the class lives on .workspace.
+  const papersCollapseBtn = document.getElementById("papers-collapse");
+  const workspaceEl = document.querySelector(".workspace");
+  if (papersCollapseBtn && workspaceEl) {
+    const KEY = "folio:workspace-papers-collapsed";
+    if (localStorage.getItem(KEY) === "1") workspaceEl.classList.add("is-papers-collapsed");
+    papersCollapseBtn.addEventListener("click", () => {
+      workspaceEl.classList.toggle("is-papers-collapsed");
+      localStorage.setItem(
+        KEY, workspaceEl.classList.contains("is-papers-collapsed") ? "1" : "0"
+      );
+    });
+  }
+
   // Sidebar collapse via folio .f-collapse chevron(s). Toggles
   // .is-side-collapsed (or .is-papers-collapsed) on .f-shell and persists
   // the preference in localStorage so reloads keep the user's layout.

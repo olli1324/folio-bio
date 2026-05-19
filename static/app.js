@@ -62,6 +62,7 @@
     authToggle: document.getElementById("auth-toggle"),
     authError: document.getElementById("auth-error"),
     folioMe: document.getElementById("folio-me"),
+    folioBreadcrumb: document.getElementById("folio-breadcrumb"),
     banner: document.getElementById("banner"),
     bannerText: document.getElementById("banner-text"),
     bannerClear: document.getElementById("banner-clear"),
@@ -149,8 +150,9 @@
     if (els.papersSort) els.papersSort.value = "relevance";
     if (els.papersFilterType) els.papersFilterType.value = "all";
     if (els.papersSearch) els.papersSearch.value = "";
-    els.briefing.innerHTML =
-      '<p class="muted placeholder">Pipeline running… papers will fill in as they are extracted.</p>';
+    // Restore the proper loading placeholder (skeleton + stage-aware
+     // subline). renderPlaceholder is defined later in this file.
+    renderPlaceholder("Starting the search…");
     els.briefingMeta.textContent = "";
     els.stageLabel.textContent = "Starting…";
     els.stageInfo.textContent = "";
@@ -449,6 +451,91 @@
     if (sub) sub.textContent = text || "";
   }
 
+  function renderError(rawMessage) {
+    // Translate a raw pipeline exception into something a scientist can
+    // act on. We keep the original message available as a collapsible
+    // detail for debugging without dumping it as the first thing the
+    // user sees.
+    const friendly = friendlyError(rawMessage);
+    const detail = rawMessage ? escapeHtml(String(rawMessage)) : "";
+    els.briefing.innerHTML = `
+      <div class="briefing-error">
+        <div class="briefing-error__eyebrow">Couldn't finish the briefing</div>
+        <h2 class="briefing-error__headline">${escapeHtml(friendly.headline)}</h2>
+        <p class="briefing-error__body">${escapeHtml(friendly.body)}</p>
+        <div class="briefing-error__actions">
+          <button type="button" class="f-btn f-btn--primary" id="briefing-error-retry">Try again</button>
+          <button type="button" class="f-btn f-btn--ghost" id="briefing-error-home">New query</button>
+        </div>
+        ${detail ? `<details class="briefing-error__details">
+          <summary>Technical details</summary>
+          <pre>${detail}</pre>
+        </details>` : ""}
+      </div>
+    `;
+    const retryBtn = document.getElementById("briefing-error-retry");
+    const homeBtn = document.getElementById("briefing-error-home");
+    if (retryBtn) retryBtn.addEventListener("click", () => {
+      if (currentQuery) startRun(currentQuery);
+    });
+    if (homeBtn) homeBtn.addEventListener("click", () => {
+      clearBanner();
+      els.input.value = "";
+      els.input.focus();
+    });
+  }
+
+  function friendlyError(raw) {
+    const msg = (raw || "").toLowerCase();
+    if (msg.includes("did not return parseable json") || msg.includes("unparseable")) {
+      return {
+        headline: "The model's response wasn't structured properly.",
+        body:
+          "This usually happens when the query is too short or generic. " +
+          "Try a more specific term (e.g. \"EGFR inhibitors for non-small-cell lung cancer\" " +
+          "rather than a single word).",
+      };
+    }
+    if (msg.includes("timeout") || msg.includes("timed out")) {
+      return {
+        headline: "Featherless took too long to respond.",
+        body:
+          "The model may be cold-starting. Wait 30 seconds and try again — " +
+          "the second call usually warms up cleanly.",
+      };
+    }
+    if (msg.includes("rate") || msg.includes("429")) {
+      return {
+        headline: "Hit the Featherless rate limit.",
+        body: "Wait a minute or two and re-run — the slot budget will refresh.",
+      };
+    }
+    if (msg.includes("403") || msg.includes("gated")) {
+      return {
+        headline: "A required model is gated.",
+        body: "Visit the model's page on featherless.ai and accept the licence, then re-run.",
+      };
+    }
+    if (msg.includes("pubmed") || msg.includes("esearch") || msg.includes("efetch")) {
+      return {
+        headline: "PubMed didn't respond cleanly.",
+        body: "Likely a transient NCBI hiccup. Re-running usually works.",
+      };
+    }
+    if (msg.includes("no results") || msg.includes("no papers")) {
+      return {
+        headline: "No papers matched that query.",
+        body:
+          "Try broadening the terms — e.g. include a disease name (\"NSCLC\", " +
+          "\"melanoma\") if you only used a gene name.",
+      };
+    }
+    return {
+      headline: "Something went wrong mid-pipeline.",
+      body: "Re-running often resolves transient errors. If it keeps failing, the technical details below may help.",
+    };
+  }
+
   function setLabel(text) {
     els.stageLabel.textContent = text;
   }
@@ -574,6 +661,10 @@
         currentBriefingId = detail.briefing_id;
         history.replaceState({}, "", `/?briefing=${detail.briefing_id}`);
       }
+      // Update the navbar breadcrumb to reflect the briefing we're viewing.
+      if (els.folioBreadcrumb && currentQuery) {
+        els.folioBreadcrumb.textContent = `Briefing · ${currentQuery}`;
+      }
       // Notes section is only meaningful once a briefing exists *and* we
       // have a briefing_id to save against (history must be enabled).
       revealNotes("");
@@ -587,9 +678,10 @@
     }
     if (stage === "error") {
       setStage("done", "error");
-      setLabel("Pipeline error");
-      setInfo(message || "see console");
+      setLabel("Couldn't finish the briefing");
+      setInfo("");
       setProgress(null);
+      renderError(message || "");
       finishRun();
       return;
     }
@@ -887,6 +979,10 @@
     currentQuery = briefing.query || "";
     // Surface any saved notes for this past briefing.
     revealNotes(typeof briefing.notes === "string" ? briefing.notes : "");
+    // Sync the navbar breadcrumb.
+    if (els.folioBreadcrumb) {
+      els.folioBreadcrumb.textContent = `Briefing · ${briefing.query || "(untitled)"}`;
+    }
   }
 
   function revealNotes(text) {
@@ -985,6 +1081,9 @@
     els.strip.hidden = true;
     if (els.notesSection) els.notesSection.hidden = true;
     if (els.notesInput) els.notesInput.value = "";
+    if (els.folioBreadcrumb) {
+      els.folioBreadcrumb.textContent = "Home · new briefing";
+    }
     currentBriefingId = null;
     currentMarkdown = "";
     currentQuery = "";

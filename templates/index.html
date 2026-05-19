@@ -75,26 +75,11 @@
         <button id="signin-btn" type="button" class="auth-primary-btn">Sign in / Sign up</button>
       </div>
       <div id="auth-user" class="auth-user" hidden>
-        <div class="auth-user-line">
+        <div class="auth-user-card">
+          <div class="auth-user-avatar" id="auth-user-avatar" aria-hidden="true">?</div>
           <span class="auth-user-email" id="auth-user-email">—</span>
         </div>
         <button id="signout-btn" type="button" class="auth-secondary-btn">Sign out</button>
-      </div>
-    </div>
-
-    <div class="sidebar-footer folio-sidebar-attrib">
-      <div class="folio-attrib-row">
-        <a class="folio-attrib-chip" href="https://featherless.ai"
-           target="_blank" rel="noopener">FEATHERLESS</a>
-        <span class="f-mono-label">powered</span>
-      </div>
-      <div class="folio-attrib-row">
-        <span class="folio-attrib-chip folio-attrib-chip--static">MIT</span>
-        <span class="f-mono-label">open-source</span>
-      </div>
-      <div class="folio-attrib-row folio-attrib-row--links">
-        <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubMed</a>
-        <a href="https://clinicaltrials.gov/" target="_blank" rel="noopener">ClinicalTrials.gov</a>
       </div>
     </div>
   </aside>
@@ -138,14 +123,7 @@
        framing is consistent. Updated text via JS as the user navigates. -->
   <nav class="folio-navbar">
     <span id="folio-breadcrumb" class="f-mono-label">Home · new briefing</span>
-    <button id="folio-me" type="button" class="folio-home__me"
-            title="Account">?</button>
   </nav>
-
-  <div id="banner" class="banner" hidden>
-    <span id="banner-text"></span>
-    <button id="banner-clear" type="button">New query</button>
-  </div>
 
   <!-- Home view: folio-home pattern from the design guide.
        Top-of-fold hero + centered querybox + Try chips + stats footer.
@@ -341,6 +319,9 @@
     <span>Open source, MIT licensed</span>
     <span>·</span>
     <span>Featherless-powered domain agent for the AI Agent Olympics 2026</span>
+    <span>·</span>
+    <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubMed</a>
+    <a href="https://clinicaltrials.gov/" target="_blank" rel="noopener">ClinicalTrials.gov</a>
   </footer>
 
   </main>

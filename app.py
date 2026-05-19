@@ -116,8 +116,8 @@ async def api_history(request: Request, limit: int = 30) -> JSONResponse:
     """Recent briefings, newest first.
 
     Auth semantics:
-      - Logged-in users see their own briefings plus any curated
-        is_demo=true rows.
+      - Logged-in users see only their own briefings (demos are noise
+        once you have a real account).
       - Anonymous visitors see only the curated demo briefings.
       - Returns [] if Supabase isn't configured.
     """
@@ -127,7 +127,7 @@ async def api_history(request: Request, limit: int = 30) -> JSONResponse:
     rows = await storage.list_briefings(
         limit=limit,
         user_id=auth.user_id,
-        include_demo=True,
+        include_demo=auth.user_id is None,
     )
     return JSONResponse(rows)
 

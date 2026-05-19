@@ -61,11 +61,8 @@
     authSubmit: document.getElementById("auth-submit"),
     authToggle: document.getElementById("auth-toggle"),
     authError: document.getElementById("auth-error"),
-    folioMe: document.getElementById("folio-me"),
+    authUserAvatar: document.getElementById("auth-user-avatar"),
     folioBreadcrumb: document.getElementById("folio-breadcrumb"),
-    banner: document.getElementById("banner"),
-    bannerText: document.getElementById("banner-text"),
-    bannerClear: document.getElementById("banner-clear"),
     notesSection: document.getElementById("notes-section"),
     notesInput: document.getElementById("notes-input"),
     notesStatus: document.getElementById("notes-status"),
@@ -939,12 +936,6 @@
     els.runBtn.disabled = false;
     els.runBtn.textContent = "Brief me";
 
-    // Banner indicating this is a past run.
-    const when = briefing.created_at ? new Date(briefing.created_at) : null;
-    const ago = when ? relativeTime(when) : "earlier";
-    els.bannerText.textContent = `Viewing past briefing: "${briefing.query}" - created ${ago}`;
-    els.banner.hidden = false;
-
     // Rebuild the papers list (re-using the live-run helpers).
     const paperData = papers.map((p) => ({
       pmid: p.pmid,
@@ -1078,7 +1069,6 @@
   }
 
   function clearBanner() {
-    els.banner.hidden = true;
     history.replaceState({}, "", "/");
     // Returning to the hero state: hide workspace + strip + notes, drop the
     // body class so the centered query bar comes back, reset state.
@@ -1243,11 +1233,6 @@
       );
     });
   }
-  els.bannerClear.addEventListener("click", () => {
-    clearBanner();
-    els.input.value = "";
-    els.input.focus();
-  });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       if (!els.modal.hidden) closeModal();
@@ -1375,17 +1360,12 @@
       els.authAnon.hidden = false;
       els.authUser.hidden = true;
     }
-    // Top-right gradient profile circle on the home view: shows the first
-    // letter of the user's email when authed, a "?" when anonymous. Click
-    // routes to the auth modal (anon) or signs the user out (authed).
-    if (els.folioMe) {
-      const initial = authState && authState.email
+    // Avatar circle in the sidebar auth-user card: first letter of the
+    // signed-in user's email.
+    if (els.authUserAvatar) {
+      els.authUserAvatar.textContent = authState && authState.email
         ? authState.email.trim().charAt(0).toUpperCase()
         : "?";
-      els.folioMe.textContent = initial;
-      els.folioMe.title = authState
-        ? `${authState.email} · click to sign out`
-        : "Sign in / sign up";
     }
   }
 
@@ -1460,16 +1440,6 @@
   // Wire auth UI.
   if (els.signinBtn) els.signinBtn.addEventListener("click", () => openAuthModal("signin"));
   if (els.signoutBtn) els.signoutBtn.addEventListener("click", handleSignOut);
-  if (els.folioMe) {
-    els.folioMe.addEventListener("click", () => {
-      if (authState) {
-        // Confirm before signing out so a stray click doesn't drop the session.
-        if (confirm(`Sign out of ${authState.email}?`)) handleSignOut();
-      } else {
-        openAuthModal("signin");
-      }
-    });
-  }
   if (els.authModalClose) els.authModalClose.addEventListener("click", closeAuthModal);
   if (els.authModalBackdrop) els.authModalBackdrop.addEventListener("click", closeAuthModal);
   if (els.authToggle) {

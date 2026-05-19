@@ -182,7 +182,6 @@ a:hover { color: var(--folio-primary-deep); }
 .is-side-collapsed .f-sidebar .f-mono-label,
 .is-side-collapsed .f-sidebar .f-brief-list,
 .is-side-collapsed .f-sidebar .sidebar-auth,
-.is-side-collapsed .f-sidebar .sidebar-footer,
 .is-side-collapsed .f-sidebar .f-new-brief > span:not(.kb) { display: none; }
 .is-side-collapsed .f-sidebar .f-new-brief { justify-content: center; padding: 10px; }
 .is-side-collapsed .f-sidebar .f-new-brief .kb { display: none; }

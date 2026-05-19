@@ -1,0 +1,1519 @@
+/* Folio UI — minimal, scientist-friendly styling. */
+
+/* Legacy tokens are aliased to the Folio design system tokens defined in
+ * folio.css. Every existing rule in this file refers to var(--bg / --pane /
+ * --ink / --accent / etc.) — re-aliasing those to folio's palette propagates
+ * the new look without touching every selector below. */
+:root {
+  --bg: var(--folio-paper);
+  --pane: var(--folio-card);
+  --ink: var(--folio-ink);
+  --ink-soft: var(--folio-ink-soft);
+  --muted: var(--folio-muted);
+  --border: var(--folio-rule);
+  --accent: var(--folio-primary);
+  --accent-ink: #F6F4EC;
+  --hl: var(--folio-primary-soft);
+  --ok: var(--folio-ok);
+  --warn: var(--folio-warn);
+  --err: var(--folio-error);
+  --shadow: var(--sh-1), var(--sh-2);
+  --mono: var(--f-mono);
+  --serif: var(--f-sans);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+/* The HTML `hidden` attribute should always win over later display rules.
+ * Without `!important`, any element-class rule that sets `display: grid` or
+ * `display: flex` overrides the user-agent `[hidden] { display: none }`, so
+ * the modal / banner / workspace would all be visible before the JS runs.
+ */
+[hidden] { display: none !important; }
+body {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--bg);
+  min-height: 100vh;
+  margin: 0;
+}
+
+/* === Sidebar — layout lives in folio.css under .f-shell + .f-sidebar.
+ * The two-column grid sizes the sidebar via --f-side-w (240px default,
+ * 56px when collapsed). All that remains here is the sticky behaviour so
+ * scrolling main content doesn't pull the sidebar with it.  */
+.sidebar {
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+/* Legacy body class -- the new collapse uses .f-shell.is-side-collapsed
+ * (toggled by the f-collapse chevron in folio.css). */
+body.sidebar-collapsed .f-shell { /* no-op kept for backwards compat */ }
+
+.sidebar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 4px 8px;
+}
+/* Brand block is a button so it doubles as a "home" link, but it should
+ * look like the original div — strip native button chrome and add a small
+ * hover affordance. */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+  transition: background 100ms;
+}
+.sidebar-brand:hover { background: var(--hl); }
+.sidebar-logo { height: 32px; width: auto; }
+/* Brand wordmark: simple ink. The Folio design system wants one mark per
+ * surface and no gradients; the sidebar carries the brand identity, and
+ * the briefing pane is left clean to focus the eye on the content. */
+.sidebar-brand-name {
+  font-family: var(--f-sans);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  color: var(--folio-ink);
+}
+.sidebar-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+.sidebar-toggle-btn:hover { background: var(--hl); color: var(--accent); }
+
+/* Styling comes from .f-new-brief in folio.css (navy ink background,
+ * paper-cream text). Keeping only the .plus glyph color which folio's
+ * spec doesn't define. */
+
+.sidebar-search-row input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  background: #fafbfc;
+  outline: none;
+  transition: border-color 100ms, background 100ms;
+}
+.sidebar-search-row input:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.10);
+}
+
+.sidebar-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 6px 4px 2px;
+}
+
+/* Recent briefings list: layout only (scrollable column). All item-level
+ * styling now lives in folio.css under .f-brief-item / .f-brief-list. */
+.sidebar-recents {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+.sidebar-recents .placeholder { padding: 8px 6px; font-size: 12px; }
+/* Buttons inside the f-brief-list need their native chrome stripped so the
+ * folio f-brief-item styling can paint cleanly. */
+.f-brief-list button.f-brief-item {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  width: 100%;
+  text-align: left;
+}
+/* Two-line clamp on the title — folio doesn't enforce this, but long
+ * queries overflow the 280px sidebar without it. */
+.f-brief-item .title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Auth panel inside the sidebar (above the source-attribution footer). */
+.sidebar-auth {
+  margin-top: auto;
+  padding: 12px 4px 10px;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.auth-hint { font-size: 11px; margin: 0 0 2px; }
+.auth-user-line {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 6px;
+}
+.auth-user-email {
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Styling now comes from .f-btn.f-btn--primary in folio.css.
+ * width:100% kept so the button stretches to the sidebar / modal width. */
+.auth-primary-btn { width: 100%; justify-content: center; }
+.auth-secondary-btn {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  width: 100%;
+  transition: color 100ms, border-color 100ms;
+}
+.auth-secondary-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
+
+/* Auth modal — reuses the .modal foundation defined for the paper modal. */
+.auth-modal-blurb { margin: 0 0 14px; font-size: 13px; }
+.auth-field {
+  display: block;
+  margin-bottom: 12px;
+}
+.auth-field span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-family: var(--mono);
+  margin-bottom: 4px;
+}
+.auth-field input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+  transition: border-color 100ms, box-shadow 100ms;
+}
+.auth-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+.auth-error {
+  font-size: 12px;
+  color: var(--err);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 5px;
+  padding: 6px 9px;
+  margin-bottom: 10px;
+}
+.auth-actions {
+  display: flex; flex-direction: column; gap: 8px; margin-top: 6px;
+}
+.auth-link-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px;
+}
+.auth-link-btn:hover { text-decoration: underline; }
+
+.sidebar-footer {
+  padding: 10px 4px 0;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 11px;
+}
+
+/* Sidebar attribution chips (FEATHERLESS, MIT) — pattern from base.html
+ * in the design guide. Replaces the inline link row with badge-style
+ * mono labels. */
+.folio-sidebar-attrib { gap: 8px; padding-top: 14px; }
+.folio-attrib-row {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--folio-muted);
+}
+.folio-attrib-chip {
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: var(--folio-paper-deep);
+  border: 1px solid var(--folio-rule);
+  letter-spacing: 0.06em;
+  color: var(--folio-ink-soft);
+  text-decoration: none;
+  font-weight: 500;
+}
+.folio-attrib-chip:hover { color: var(--folio-ink); border-color: var(--folio-rule-strong); }
+.folio-attrib-chip--static { cursor: default; }
+.folio-attrib-row--links { gap: 10px; padding-top: 4px; }
+.folio-attrib-row--links a { color: var(--folio-muted); text-decoration: none; text-transform: none; letter-spacing: 0; }
+.folio-attrib-row--links a:hover { color: var(--folio-ink-soft); }
+.sidebar-footer a {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 2px 0;
+}
+.sidebar-footer a:hover { color: var(--accent); }
+
+/* Floating reopen button (shown when sidebar is collapsed). */
+.sidebar-reopen-btn {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 40;
+  background: var(--pane);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  box-shadow: var(--shadow);
+}
+.sidebar-reopen-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* === Main content column ============================================== */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.muted { color: var(--muted); font-size: 13px; }
+
+/* Top bar */
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 24px;
+  background: var(--pane);
+  /* Subtle Folio-gradient accent strip under the top bar to give the brand
+   * a visible signature line. Uses the logo's blue->teal colours. */
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(90deg, #1e3a8a 0%, #2563eb 35%, #0ea5e9 65%, #10b981 100%) 1;
+}
+/* Brand block — folio.css owns the layout when .brand is inside .f-sidebar.
+ * The legacy .brand .logo height (52px) doesn't apply here because the
+ * sidebar logo is .sidebar-logo, which folio sizes to 30px. */
+
+/* Visually-hidden utility: removes from visual layout but keeps in the
+ * accessibility tree (screen readers, search bots, copy-paste). */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+.meta { color: var(--muted); font-size: 13px; }
+
+/* Query bar — two modes:
+ *   - Hero (empty state, before any briefing): centered, larger, with a
+ *     prominent bordered input. Toggled by `body:not(.has-run)`.
+ *   - Compact (workspace state, briefing visible): top-pinned slim row.
+ *     Toggled by `body.has-run`.
+ */
+.query-bar {
+  padding: 20px 24px 12px;
+  background: var(--pane);
+  border-bottom: 1px solid var(--border);
+  transition: padding 200ms ease-out;
+}
+
+/* Hero heading + subtitle live only in the empty state. */
+.hero-heading,
+.hero-subtitle {
+  display: none;
+}
+
+/* --- Hero state (empty) --- */
+body:not(.has-run) .query-bar {
+  /* Plain white canvas. The island below has its own border + shadow that
+   * does the visual heavy lifting. Center the island vertically + horiz.
+   * `flex: 1` (combined with body's flex column) grows the bar to fill all
+   * remaining viewport height, which keeps the footer pinned to the bottom
+   * rather than floating mid-page. */
+  flex: 1 0 auto;
+  padding: 56px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The floating island: one bordered, shadowed card holding heading +
+ * subtitle + form + examples. Designed to feel like it's lifting off the
+ * page — multi-layer shadow gives the lift, generous padding gives the
+ * "this is the thing" focal weight. */
+body:not(.has-run) .hero-island {
+  max-width: 740px;
+  width: 100%;
+  padding: 48px 48px 36px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  text-align: center;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 10px 24px rgba(15, 23, 42, 0.06),
+    0 30px 60px rgba(15, 23, 42, 0.06);
+}
+
+body:not(.has-run) .hero-heading {
+  display: block;
+  margin: 0 0 10px;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  line-height: 1.25;
+}
+body:not(.has-run) .hero-subtitle {
+  display: block;
+  margin: 0 0 28px;
+  font-size: 14px;
+  color: var(--muted);
+}
+/* Search input sits inside the island, with its own subtle inner border. */
+body:not(.has-run) #query-form {
+  background: #fafbfc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 5px;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 150ms, box-shadow 150ms, background 150ms;
+}
+body:not(.has-run) #query-form:focus-within {
+  border-color: var(--accent);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+}
+body:not(.has-run) #query-input {
+  flex: 1;
+  font-size: 16px;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  text-align: left;
+}
+body:not(.has-run) #query-input:focus {
+  box-shadow: none;
+  border: none;
+}
+body:not(.has-run) .papers-control {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0 8px;
+}
+body:not(.has-run) #run-btn {
+  border-radius: 9px;
+  padding: 10px 18px;
+}
+body:not(.has-run) .examples {
+  margin-top: 20px;
+  justify-content: center;
+}
+
+/* --- Workspace state (has-run): collapse the island, full-width form --- */
+body.has-run .hero-island {
+  max-width: none;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  text-align: left;
+}
+
+/* --- Compact state (workspace) --- */
+#query-form {
+  display: flex; gap: 10px; align-items: stretch;
+}
+#query-input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 120ms, box-shadow 120ms;
+}
+#query-input:focus,
+#papers-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.papers-control {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--pane);
+}
+.papers-control span {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+#papers-input {
+  width: 56px;
+  padding: 4px 0;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-family: inherit;
+  text-align: center;
+  background: transparent;
+}
+#papers-input::-webkit-inner-spin-button,
+#papers-input::-webkit-outer-spin-button {
+  opacity: 1;
+}
+/* Styling now comes from .f-btn.f-btn--primary.f-btn--lg in folio.css.
+ * Only the disabled state is needed here — folio.css doesn't define one. */
+#run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.examples {
+  margin-top: 10px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  font-size: 12px; color: var(--muted);
+  align-items: center;
+}
+.examples span { margin-right: 4px; }
+.examples .example {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--ink-soft);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.examples .example:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  border-style: solid;
+}
+
+/* Pipeline strip — compact single-row indicator. Lives only while a run is
+ * in flight; the briefing pane shows the final state afterwards. */
+.pipeline-strip {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 24px;
+  background: var(--pane);
+  border-bottom: 1px solid var(--border);
+  min-height: 36px;
+  font-size: 12px;
+}
+.stages {
+  display: flex; gap: 4px;
+  list-style: none; margin: 0; padding: 0;
+  flex: 0 0 auto;
+}
+.stages li {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #d8dee6;
+  transition: background 180ms, transform 180ms;
+}
+.stages li.active {
+  background: var(--accent);
+  transform: scale(1.25);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+.stages li.done {
+  background: var(--ok);
+}
+.stages li.error {
+  background: var(--err);
+}
+.stage-label {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  flex: 0 0 auto;
+  min-width: 100px;
+}
+.progress-track {
+  flex: 1 1 auto;
+  height: 4px;
+  background: #e8edf3;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 250ms ease-out;
+}
+.stage-info {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* Workspace: two-pane layout */
+.workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 1px;
+  background: var(--border);
+  min-height: 0;
+}
+.papers-pane,
+.briefing-pane {
+  background: var(--pane);
+  padding: 16px 20px;
+  overflow-y: auto;
+  /* Fill the workspace grid cell instead of clamping to a fixed pixel
+   * calculation. `min-height: 0` lets the panes shrink inside the grid so
+   * `overflow-y: auto` kicks in instead of forcing layout to overflow.
+   * Without this, the panes would be shorter than the workspace cell and
+   * the cell's gray background bleeds through underneath. */
+  min-height: 0;
+  height: 100%;
+}
+.pane-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.pane-actions { display: flex; align-items: center; gap: 10px; position: relative; }
+
+/* Download dropdown */
+.dropdown { position: relative; display: inline-block; }
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: var(--pane);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  min-width: 240px;
+  z-index: 30;
+}
+.dropdown-menu li { display: block; margin: 0; padding: 0; }
+.dropdown-menu button {
+  display: block; width: 100%;
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 8px 10px;
+  font-family: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 4px;
+}
+.dropdown-menu button:hover { background: var(--hl); }
+.dropdown-menu .dd-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.dropdown-menu .dd-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+.ghost-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+.pane-header h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+/* Brand wordmark inline in the briefing header so "Folio" reads at the
+ * point the user is actually looking, not just in the top bar. */
+.pane-header h2 .brand-eyebrow {
+  background: linear-gradient(90deg, #2563eb 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+/* Papers toolbar (search + filter + sort) */
+.papers-toolbar {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-bottom: 10px;
+}
+.papers-toolbar select,
+.papers-toolbar input[type="search"] {
+  font-family: inherit;
+  color: var(--ink-soft);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 100ms, box-shadow 100ms;
+}
+.papers-toolbar select:focus,
+.papers-toolbar input[type="search"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+/* Search bar — prominent, full-width row. Magnifying-glass glyph rendered
+ * via background-image so we don't need an icon font. */
+.papers-search-row {
+  position: relative;
+}
+.papers-search-row input[type="search"] {
+  width: 100%;
+  padding: 8px 10px 8px 30px;
+  font-size: 13px;
+  color: var(--ink);
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b94a0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 8px center;
+  background-size: 14px 14px;
+}
+.papers-search-row input[type="search"]::placeholder {
+  color: var(--muted);
+}
+
+/* Sort + filter dropdowns row */
+.papers-filter-row {
+  display: flex; gap: 6px;
+}
+.papers-filter-row select {
+  font-size: 12px;
+  padding: 5px 8px;
+  flex: 1;
+}
+
+/* Papers list */
+.papers-list {
+  list-style: none;
+  margin: 0; padding: 0;
+}
+.papers-list li.paper {
+  padding: 10px 8px;
+  margin: 0 -8px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 100ms;
+  display: grid;
+  gap: 4px;
+}
+.papers-list li.paper:hover {
+  background: var(--hl);
+  border-radius: 4px;
+}
+.paper-statusline {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+}
+.paper .paper-status {
+  font-size: 11px;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.paper.status-done .paper-status { color: var(--ok); }
+.paper.status-skipped .paper-status { color: var(--warn); }
+.paper.status-extracting .paper-status { color: var(--accent); }
+.paper-pmid {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--hl);
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 100ms;
+}
+.paper-pmid:hover {
+  background: #dbe7ff;
+  text-decoration: none;
+}
+.paper .paper-title {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.35;
+}
+.paper .paper-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+.paper .paper-extraction {
+  font-size: 12px;
+  color: var(--ink-soft);
+  background: #f7f9fc;
+  border-radius: 3px;
+  padding: 6px 8px;
+  margin-top: 4px;
+}
+.paper .paper-extraction strong { color: var(--ink); font-weight: 600; }
+.paper .relevance {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--hl);
+  color: var(--accent);
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 11px;
+  margin-left: 6px;
+}
+
+/* Briefing pane — Folio brief typography from the design guide.
+ * Larger title, mono-numeric H1 hidden (we use a top-line eyebrow instead),
+ * H2s get a small §-number eyebrow before each section name. */
+.briefing-render {
+  font-family: var(--f-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--folio-ink-soft);
+  max-width: 880px;
+}
+.briefing-render h1 {
+  font-family: var(--f-sans);
+  font-weight: 500;
+  font-size: 28px;
+  letter-spacing: -0.015em;
+  color: var(--folio-ink);
+  line-height: 1.1;
+  margin: 8px 0 var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--folio-rule);
+}
+.briefing-render h2 {
+  font-family: var(--f-sans);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--folio-ink);
+  letter-spacing: 0.02em;
+  margin: var(--s-6) 0 var(--s-3);
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+/* Auto-numbered §-prefix on every H2 in the briefing prose. The :before
+ * counter resets at each .briefing-render render, so a fresh briefing
+ * always starts at §1. */
+.briefing-render { counter-reset: section; }
+.briefing-render h2::before {
+  counter-increment: section;
+  content: "§" counter(section);
+  font-family: var(--f-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--folio-accent-deep);
+  letter-spacing: 0.02em;
+}
+.briefing-render h3 {
+  font-family: var(--f-sans);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--folio-ink);
+  margin: var(--s-4) 0 var(--s-2);
+}
+.briefing-render p {
+  font-family: var(--f-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--folio-ink-soft);
+  margin: 0 0 var(--s-3);
+}
+.briefing-render ol, .briefing-render ul { padding-left: 22px; }
+.briefing-render li { margin: var(--s-2) 0; line-height: 1.55; }
+.briefing-render code {
+  font-family: var(--f-mono);
+  background: var(--folio-paper-deep);
+  padding: 1px 5px;
+  border-radius: var(--r-xs);
+  font-size: 12.5px;
+  color: var(--folio-ink);
+}
+.briefing-render em {
+  font-family: var(--f-serif);
+  font-style: italic;
+  color: var(--folio-primary-deep);
+}
+.briefing-render strong { color: var(--folio-ink); }
+
+.briefing-render .placeholder { font-size: 14px; }
+
+/* ============================================================
+   FOLIO HOME — hero, querybox, try-chips, stats footer
+   Page-level styles (kept in style.css per the design rule that
+   page-specific styling doesn't bloat the shared system). Drawn
+   from the design guide's home.html.
+   ============================================================ */
+.folio-home {
+  padding: var(--s-7) var(--s-9) var(--s-9);
+  display: flex; flex-direction: column;
+  gap: var(--s-6);
+  min-height: 100vh;
+  box-sizing: border-box;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.folio-home__topbar {
+  display: flex; justify-content: space-between; align-items: center;
+}
+.folio-home__me {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--folio-primary), var(--folio-accent));
+  color: #fff;
+  font-family: var(--f-serif);
+  font-style: italic;
+  font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.folio-home__me:hover {
+  transform: scale(1.05);
+  box-shadow: var(--sh-2);
+}
+
+.folio-home__hero { max-width: 720px; margin: 60px auto 0; text-align: center; }
+.folio-eyebrow {
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--folio-accent-deep);
+}
+.folio-home__title {
+  font-family: var(--f-sans);
+  font-weight: 300;
+  font-size: 44px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--folio-ink);
+  margin: 14px 0 12px;
+}
+.folio-home__sub {
+  font-family: var(--f-sans);
+  font-size: 15px;
+  color: var(--folio-ink-soft);
+  line-height: 1.45;
+  margin: 0 auto;
+  max-width: 540px;
+}
+
+.folio-querybox {
+  margin: var(--s-8) auto 0;
+  max-width: 780px;
+  width: 100%;
+  background: var(--folio-card);
+  border: 1px solid var(--folio-rule-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-2);
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 10px 18px 10px 10px;
+}
+.folio-querybox__field {
+  flex: 1;
+  padding: 8px 14px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.folio-querybox__field input {
+  border: 0; outline: 0;
+  font-family: var(--f-sans);
+  font-size: 16px;
+  color: var(--folio-ink);
+  background: transparent;
+  padding: 0;
+  width: 100%;
+}
+.folio-querybox__field input::placeholder { color: var(--folio-muted-2); }
+.folio-querybox__stepper {
+  padding: 8px 14px;
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 92px;
+}
+.folio-querybox__stepper input {
+  border: 0; outline: 0;
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--folio-ink);
+  background: transparent;
+  padding: 0;
+  width: 60px;
+}
+.folio-querybox__go {
+  background: var(--folio-ink-bg);
+  color: #F6F4EC;
+  /* Asymmetric padding: generous on the left so "Brief me" has room,
+   * tight on the right so the arrow doesn't float in dead space. */
+  padding: 12px 14px 12px 22px;
+  border-radius: var(--r-md);
+  font-family: var(--f-sans);
+  font-weight: 500;
+  font-size: 15px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer;
+  border: 0;
+  transition: background 120ms ease;
+}
+.folio-querybox__go:hover { background: var(--folio-ink-bg-2); }
+.folio-querybox__go:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.folio-try {
+  display: flex; justify-content: center; align-items: center;
+  gap: 8px; flex-wrap: wrap;
+  margin-top: var(--s-6);
+}
+.folio-stats {
+  margin-top: auto;
+  padding-top: var(--s-7);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-6);
+  border-top: 1px solid var(--folio-rule);
+}
+.folio-stat { display: flex; flex-direction: column; gap: 4px; }
+.folio-stat__num {
+  font-family: var(--f-sans);
+  font-weight: 400;
+  font-size: 28px;
+  color: var(--folio-ink);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+/* When a briefing is rendered, hide the home view entirely. */
+body.has-run .folio-home { display: none; }
+
+/* Loading placeholder for the briefing pane — runs while the pipeline is
+ * working. Plain headline + stage-aware subline + a quiet skeleton that
+ * suggests where the real briefing will land. Subliminal rather than loud. */
+.briefing-placeholder {
+  padding: 24px 0;
+}
+.placeholder-headline {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.placeholder-subline {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 24px;
+  font-family: var(--mono);
+}
+.placeholder-skeleton { display: flex; flex-direction: column; gap: 10px; }
+.sk-block {
+  background: linear-gradient(90deg, #f1f4f8 0%, #e8edf3 50%, #f1f4f8 100%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: sk-shimmer 1.6s ease-in-out infinite;
+}
+.sk-h        { height: 14px; width: 40%; margin-top: 16px; }
+.sk-h-2      { width: 28%; }
+.sk-line     { height: 10px; width: 100%; }
+.sk-line-3q  { width: 75%; }
+.sk-line-half{ width: 50%; }
+
+@keyframes sk-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Notes scratchpad — sits at the bottom of the briefing pane. */
+.notes-section {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+}
+.notes-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.notes-header h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+#notes-status {
+  font-size: 12px;
+  font-family: var(--mono);
+}
+#notes-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fcfdfe;
+  outline: none;
+  resize: vertical;
+  min-height: 90px;
+  transition: border-color 100ms, box-shadow 100ms;
+}
+#notes-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  background: #fff;
+}
+#notes-input::placeholder { color: var(--muted); }
+
+/* Modal */
+.modal {
+  position: fixed; inset: 0;
+  z-index: 50;
+  display: grid; place-items: center;
+}
+.modal-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+}
+.modal-card {
+  position: relative;
+  background: var(--pane);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  max-width: 800px;
+  width: calc(100% - 40px);
+  max-height: calc(100vh - 80px);
+  display: flex; flex-direction: column;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+#paper-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0 4px;
+}
+#paper-modal-close:hover { color: var(--ink); }
+.modal-body {
+  padding: 18px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.modal-body .field {
+  margin-bottom: 14px;
+}
+.modal-body .field-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-family: var(--mono);
+  margin-bottom: 4px;
+}
+.modal-body .abstract {
+  white-space: pre-wrap;
+  background: #f7f9fc;
+  padding: 10px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.modal-body .compounds {
+  display: inline-flex; flex-wrap: wrap; gap: 4px;
+}
+.modal-body .chip {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--hl);
+  color: var(--accent);
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+/* Visual styling now comes from .f-btn.f-btn--ghost in folio.css.
+ * The legacy .ghost-btn class remains in the HTML as a JS hook only. */
+
+/* History drawer (right-side slide-in) */
+.drawer {
+  position: fixed; inset: 0;
+  z-index: 40;
+}
+.drawer-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(2px);
+}
+.drawer-card {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 420px; max-width: 90vw;
+  background: var(--pane);
+  display: flex; flex-direction: column;
+  box-shadow: -2px 0 16px rgba(15, 23, 42, 0.08);
+}
+.drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.drawer-header h3 {
+  margin: 0; font-size: 14px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+#history-close {
+  background: transparent; border: none;
+  font-size: 22px; line-height: 1; cursor: pointer;
+  color: var(--muted); padding: 0 4px;
+}
+#history-close:hover { color: var(--ink); }
+.drawer-body {
+  flex: 1; overflow-y: auto;
+  padding: 8px 10px;
+}
+/* Legacy .history-item rules removed; folio .f-brief-item now styles
+ * recent-briefing list items in the sidebar. */
+
+/* "Viewing past briefing" banner */
+.banner {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 24px;
+  background: #fffbeb;
+  border-bottom: 1px solid #fde68a;
+  font-size: 13px;
+  color: #7c2d12;
+}
+.banner button {
+  background: transparent;
+  border: 1px solid #fde68a;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #7c2d12;
+  font-family: inherit;
+}
+.banner button:hover { background: #fef3c7; }
+
+/* Footer — pinned to the bottom of the viewport by body's flex column +
+ * the query-bar's flex:1 in empty state (or workspace's flex:1 in workspace
+ * state). flex-shrink:0 protects against being compressed when content
+ * height exceeds viewport. */
+.topbar { flex-shrink: 0; }
+.footer {
+  flex-shrink: 0;
+  padding: 14px 24px;
+  text-align: center;
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+  background: var(--pane);
+  display: flex; gap: 8px; justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+  .papers-pane { max-height: 280px; }
+}
+
+/* Print / "Save as PDF" — produce a report-style document with proper
+ * margins, a cover block, page numbers, and page-break rules that keep each
+ * compound entry intact. Browsers map @media print to the PDF target as
+ * well, so the system print dialog's "Save as PDF" produces the same.
+ */
+@media print {
+  /* IMPORTANT: Chrome / Safari print dialogs have a "Margins" option
+   * (None / Minimum / Default / Custom) that *overrides* `@page margin`.
+   * That used to leave the document edge-to-edge when users picked the
+   * wrong setting. Belt-and-braces fix: use @page only for the header /
+   * footer (which need a top + bottom margin band to render in), and put
+   * the *visible* left/right and content spacing on the body as padding,
+   * which the print dialog cannot strip.
+   */
+  @page {
+    size: A4;
+    /* Vertical margins are how we get per-page top/bottom spacing on every
+     * page (page 2+). Body padding only buffers the first page; it does not
+     * repeat on continuation pages. Be generous here because Chrome's
+     * "Margins" dropdown in the print dialog can still strip @page entirely
+     * if the user picks "None" or "Minimum" -- 22mm leaves the printout
+     * readable under "Default" / "Custom" / "Minimum" all the same.
+     * Horizontal margins kept minimal; the visible side breathing room is
+     * owned by the body padding below (which Chrome cannot strip). */
+    margin: 22mm 8mm 22mm 8mm;
+
+    @top-right {
+      content: "Folio · drug-discovery briefing";
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      font-size: 9pt;
+      color: #888;
+    }
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      font-size: 9pt;
+      color: #888;
+    }
+    @bottom-left {
+      content: "Generated by Folio";
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      font-size: 9pt;
+      color: #888;
+    }
+  }
+
+  /* On the cover page, hide the running header so the title block can breathe. */
+  @page :first {
+    @top-right { content: ""; }
+  }
+
+  html, body {
+    background: #ffffff;
+    color: #111111;
+    font-size: 11pt;
+    line-height: 1.55;
+  }
+
+  /* The visible report margin lives here. !important defends against any
+   * later .briefing-pane padding override. */
+  body {
+    padding: 6mm 16mm 8mm 16mm !important;
+  }
+
+  /* Hide every piece of UI chrome. */
+  .topbar,
+  .query-bar,
+  .pipeline-strip,
+  .papers-pane,
+  .pane-header,
+  .pane-actions,
+  .footer,
+  .drawer,
+  .modal,
+  .banner,
+  .examples {
+    display: none !important;
+  }
+
+  .workspace {
+    display: block !important;
+    background: none;
+    grid-template-columns: none;
+  }
+
+  .briefing-pane {
+    background: #ffffff;
+    padding: 0;
+    overflow: visible;
+    max-height: none;
+  }
+
+  /* Cover block — injected by app.js as the first child of .briefing-render
+   * when a briefing renders. Sets the report tone before the H1 title. */
+  .print-cover {
+    display: block !important;
+    margin: 0 0 24mm 0;
+    padding: 0 0 6mm 0;
+    border-bottom: 1.5pt solid #111111;
+  }
+  .print-cover .cover-logo {
+    display: block;
+    height: 14mm;
+    width: auto;
+    margin: 0 0 6mm 0;
+  }
+  .print-cover .eyebrow {
+    font-size: 9pt;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 6mm;
+  }
+  .print-cover .cover-title {
+    font-size: 22pt;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #111111;
+    margin: 0 0 4mm 0;
+  }
+  .print-cover .cover-subtitle {
+    font-size: 13pt;
+    color: #333;
+    font-weight: 400;
+    line-height: 1.35;
+    margin: 0 0 8mm 0;
+  }
+  .print-cover .cover-meta {
+    display: block;
+    font-size: 10pt;
+    color: #444;
+    line-height: 1.7;
+  }
+  .print-cover .cover-meta span { display: inline-block; margin-right: 18pt; }
+  .print-cover .cover-meta strong { color: #111; font-weight: 600; }
+
+  /* Suppress the duplicated H1 the markdown renderer adds — the cover above
+   * is the title. We keep the H1 in screen mode; in print only, hide it. */
+  .briefing-render > h1:first-of-type {
+    display: none;
+  }
+
+  /* Section headings */
+  .briefing-render h2 {
+    font-size: 13pt;
+    font-weight: 700;
+    margin: 9mm 0 3mm 0;
+    padding-bottom: 2mm;
+    border-bottom: 0.5pt solid #999;
+    color: #111111;
+    page-break-after: avoid;
+  }
+  .briefing-render h3 {
+    font-size: 11.5pt;
+    font-weight: 600;
+    margin: 4mm 0 2mm 0;
+    page-break-after: avoid;
+  }
+  .briefing-render p {
+    margin: 0 0 3mm 0;
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Top-compound entries — keep each one intact across pages.
+   * The markdown for top_compounds renders as `<ol><li>...` with the rationale,
+   * trials line, and supporting PMIDs as siblings inside one <li>.
+   */
+  .briefing-render ol > li,
+  .briefing-render ul > li {
+    page-break-inside: avoid;
+    margin-bottom: 4mm;
+  }
+  .briefing-render ol {
+    padding-left: 6mm;
+  }
+  .briefing-render ul {
+    padding-left: 5mm;
+  }
+  .briefing-render li > strong:first-child {
+    /* Compound names get prominent treatment. */
+    font-size: 11.5pt;
+  }
+
+  .briefing-render code {
+    background: #f1f1f1;
+    color: #111;
+    padding: 0 0.4mm;
+    border-radius: 1.5pt;
+    font-size: 10pt;
+  }
+  .briefing-render em { color: #444; }
+  .briefing-render strong { color: #111; }
+
+  .briefing-render a {
+    color: #1a4fbe;
+    text-decoration: none;
+    word-break: break-word;
+  }
+  /* Print the URL after each link so the PDF stays useful offline. */
+  .briefing-render a::after {
+    content: " (" attr(href) ")";
+    font-size: 8.5pt;
+    color: #777;
+    word-break: break-all;
+  }
+  /* Citation-style links (PMID / NCT) are already labelled inline, don't
+   * repeat the URL after them. */
+  .briefing-render a[href*="pubmed.ncbi.nlm.nih.gov"]::after,
+  .briefing-render a[href*="clinicaltrials.gov"]::after {
+    content: "";
+  }
+}
+
+/* On screen, the print-cover block is hidden — it only exists for print. */
+.print-cover { display: none; }

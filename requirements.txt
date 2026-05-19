@@ -1,0 +1,14 @@
+openai>=1.40.0
+pydantic>=2.7.0
+httpx>=0.27.0
+python-dotenv>=1.0.0
+# Web UI (optional — only needed for `python app.py`; the engine and `run.py`
+# work without these).
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+jinja2>=3.1.0
+# Server-side PDF rendering of briefings. Needs Pango + Cairo as system
+# libraries; on macOS: `brew install pango cairo libffi`. The app will
+# disable the /api/briefing/{id}/pdf endpoint gracefully if weasyprint
+# can't load the system libs at import time.
+weasyprint>=68.0

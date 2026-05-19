@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Folio - a day of review, in minutes</title>
+  <!-- Favicon + iOS bookmark icon, both PNG. The icon-with-wordmark works
+       at small sizes because the icon glyph dominates the centre of the
+       square. SVG link kept for browsers that prefer vector if a logo.svg
+       is later added. -->
+  <link rel="icon" type="image/svg+xml" href="/static/logo.svg" />
+  <link rel="icon" type="image/png" href="/static/folio-icon.png" />
+  <link rel="apple-touch-icon" href="/static/folio-icon.png" />
+  <!-- IBM Plex Sans + Mono + Instrument Serif. Loaded BEFORE folio.css so
+       the design-system tokens that reference these families resolve. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap"
+        rel="stylesheet" />
+  <link rel="stylesheet" href="/static/folio.css" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <!-- marked.js renders the briefing Markdown client-side. MIT licensed. -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" defer></script>
+  <!-- Public Supabase config — anon (publishable) key is safe in browser. -->
+  <script>
+    window.SUPABASE_URL = {{ supabase_url|default('')|tojson }};
+    window.SUPABASE_ANON_KEY = {{ supabase_anon_key|default('')|tojson }};
+  </script>
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+<div class="f-shell" id="f-shell">
+  <!-- Floating chevron handle sitting on the sidebar's right edge.
+       Wired in app.js to toggle .is-side-collapsed on .f-shell. -->
+  <button class="f-collapse f-collapse--side" data-toggle="side"
+          type="button" aria-label="Toggle sidebar">‹</button>
+
+  <!-- Persistent left sidebar (Claude / ChatGPT pattern):
+         brand · new-brief · search · recents list · source attribution.
+       Always visible unless collapsed via the chevron above. -->
+  <aside class="sidebar f-sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <button id="sidebar-home" type="button" class="sidebar-brand brand"
+              title="Back to home">
+        <img class="sidebar-logo" src="/static/folio-icon.png" alt=""
+             onerror="this.onerror=null; this.src='/static/logo.png';" />
+        <span class="sidebar-brand-name name">FOLIO</span>
+      </button>
+      <!-- The legacy ⌧ collapse button has been replaced by the floating
+           .f-collapse--side chevron sitting on the sidebar's right edge. -->
+    </div>
+
+    <button id="sidebar-new" type="button" class="sidebar-new-btn f-new-brief">
+      <span class="plus" aria-hidden="true">+</span>
+      <span>New brief</span>
+      <span class="kb" aria-hidden="true">⌘N</span>
+    </button>
+
+    <div class="sidebar-search-row">
+      <input id="sidebar-search" type="search"
+             placeholder="Search recent briefings…"
+             autocomplete="off" />
+    </div>
+
+    <div class="sidebar-section-label f-mono-label">Recent</div>
+    <nav id="history-list" class="sidebar-recents f-brief-list">
+      <p class="muted placeholder">Loading…</p>
+    </nav>
+
+    <!-- Auth panel: sign-in CTA when anonymous; email + sign-out when authed. -->
+    <div id="auth-panel" class="sidebar-auth">
+      <div id="auth-anon" class="auth-anon">
+        <p class="muted auth-hint">
+          Anonymous demo — your briefings are link-only.
+        </p>
+        <button id="signin-btn" type="button" class="auth-primary-btn">Sign in / Sign up</button>
+      </div>
+      <div id="auth-user" class="auth-user" hidden>
+        <div class="auth-user-line">
+          <span class="auth-user-email" id="auth-user-email">—</span>
+        </div>
+        <button id="signout-btn" type="button" class="auth-secondary-btn">Sign out</button>
+      </div>
+    </div>
+
+    <div class="sidebar-footer folio-sidebar-attrib">
+      <div class="folio-attrib-row">
+        <a class="folio-attrib-chip" href="https://featherless.ai"
+           target="_blank" rel="noopener">FEATHERLESS</a>
+        <span class="f-mono-label">powered</span>
+      </div>
+      <div class="folio-attrib-row">
+        <span class="folio-attrib-chip folio-attrib-chip--static">MIT</span>
+        <span class="f-mono-label">open-source</span>
+      </div>
+      <div class="folio-attrib-row folio-attrib-row--links">
+        <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubMed</a>
+        <a href="https://clinicaltrials.gov/" target="_blank" rel="noopener">ClinicalTrials.gov</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Auth modal: email + password, signup + login toggle. -->
+  <div id="auth-modal" class="modal" hidden>
+    <div class="modal-backdrop" id="auth-modal-backdrop"></div>
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <header class="modal-header">
+        <h3 id="auth-modal-title">Sign in to Folio</h3>
+        <button id="auth-modal-close" type="button" aria-label="Close">×</button>
+      </header>
+      <div class="modal-body">
+        <p class="muted auth-modal-blurb" id="auth-modal-blurb">
+          Sign in to save briefings to your history. 
+        </p>
+        <form id="auth-form" autocomplete="off">
+          <label class="auth-field">
+            <span>Email</span>
+            <input id="auth-email" type="email" required autocomplete="email" />
+          </label>
+          <label class="auth-field">
+            <span>Password</span>
+            <input id="auth-password" type="password" required minlength="6"
+                   autocomplete="current-password" />
+          </label>
+          <div class="auth-error" id="auth-error" hidden></div>
+          <div class="auth-actions">
+            <button id="auth-submit" type="submit" class="auth-primary-btn f-btn f-btn--primary">Sign in</button>
+            <button id="auth-toggle" type="button" class="auth-link-btn">Need an account? Sign up</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <main class="main-content">
+
+  <div id="banner" class="banner" hidden>
+    <span id="banner-text"></span>
+    <button id="banner-clear" type="button">New query</button>
+  </div>
+
+  <!-- Home view: folio-home pattern from the design guide.
+       Top-of-fold hero + centered querybox + Try chips + stats footer.
+       The .folio-querybox is a three-segment row: query · papers · Brief me.
+       This is the empty state; once a briefing renders, the workspace
+       below takes over and the hero is hidden via body.has-run. -->
+  <section class="query-bar">
+    <div class="folio-home">
+      <div class="folio-home__topbar">
+        <span class="f-mono-label">Home · new briefing</span>
+        <button id="folio-me" type="button" class="folio-home__me"
+                title="Account">?</button>
+      </div>
+      <div class="folio-home__hero">
+        <div class="folio-eyebrow">A research briefing in minutes</div>
+        <h1 class="folio-home__title">
+          What target or disease <em class="f-italic">are you scoping</em>?
+        </h1>
+        <p class="folio-home__sub">
+          PubMed papers, extracted and ranked, with mechanism of action,
+          top compound candidates, and trial status — all in one structured
+          briefing.
+        </p>
+      </div>
+
+      <form class="folio-querybox" id="query-form" autocomplete="off">
+        <label class="folio-querybox__field">
+          <span class="f-mono-label">Query</span>
+          <input
+            id="query-input"
+            type="text"
+            name="query"
+            placeholder="e.g. EGFR inhibitors for non-small-cell lung cancer"
+            required
+          />
+        </label>
+        <label class="folio-querybox__stepper" title="Papers to pull from PubMed (5–50)">
+          <span class="f-mono-label">Papers</span>
+          <input id="papers-input" type="number" min="5" max="50" step="5" value="25" />
+        </label>
+        <button class="folio-querybox__go" id="run-btn" type="submit">
+          <span>Brief me</span>
+          <span aria-hidden="true">→</span>
+        </button>
+      </form>
+
+      <div class="folio-try">
+        <span class="f-mono-label">Try</span>
+        <button class="f-chip example" type="button"
+                data-query="EGFR inhibitors for non-small-cell lung cancer">EGFR inhibitors · NSCLC</button>
+        <button class="f-chip example" type="button"
+                data-query="BRAF V600E melanoma">BRAF V600E melanoma</button>
+        <button class="f-chip example" type="button"
+                data-query="KRAS G12C inhibitors for solid tumors">KRAS G12C · solid tumors</button>
+        <button class="f-chip example" type="button"
+                data-query="HER2 positive breast cancer">HER2+ breast cancer</button>
+      </div>
+
+      <div class="folio-stats">
+        <div class="folio-stat">
+          <div class="folio-stat__num">78<span style="font-size:0.5em;color:var(--folio-muted);">%</span></div>
+          <div class="f-mono-label">Recall (5-query benchmark)</div>
+        </div>
+        <div class="folio-stat">
+          <div class="folio-stat__num">99<span style="font-size:0.5em;color:var(--folio-muted);">%</span></div>
+          <div class="f-mono-label">Extraction precision</div>
+        </div>
+        <div class="folio-stat">
+          <div class="folio-stat__num">100<span style="font-size:0.5em;color:var(--folio-muted);">%</span></div>
+          <div class="f-mono-label">Citation grounding</div>
+        </div>
+        <div class="folio-stat">
+          <div class="folio-stat__num">MIT</div>
+          <div class="f-mono-label">Open-source licence</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Compact pipeline strip: stage dots + current label + progress bar +
+       counter. Hidden until a run starts, hidden again after the briefing
+       renders (the briefing pane shows the final elapsed time). -->
+  <section id="pipeline-strip" class="pipeline-strip" hidden>
+    <ol class="stages" id="stages-list">
+      <li data-stage="plan" title="Plan"></li>
+      <li data-stage="search" title="Search"></li>
+      <li data-stage="retrieve" title="Retrieve"></li>
+      <li data-stage="extract" title="Extract"></li>
+      <li data-stage="synthesise" title="Synthesise"></li>
+      <li data-stage="enrich" title="Enrich"></li>
+      <li data-stage="done" title="Done"></li>
+    </ol>
+    <span id="stage-label" class="stage-label">Starting…</span>
+    <div class="progress-track" id="progress-track" hidden>
+      <div id="progress-bar" class="progress-bar"></div>
+    </div>
+    <span id="stage-info" class="stage-info"></span>
+  </section>
+
+  <div class="workspace" hidden>
+    <aside class="papers-pane">
+      <div class="pane-header">
+        <h2>Papers</h2>
+        <span id="papers-count" class="muted"></span>
+      </div>
+      <div class="papers-toolbar">
+        <div class="papers-search-row">
+          <input
+            id="papers-search"
+            type="search"
+            placeholder="Search PMID, compound or keyword…"
+            autocomplete="off"
+          />
+        </div>
+        <div class="papers-filter-row">
+          <select id="papers-sort" title="Sort papers">
+            <option value="relevance">Sort: relevance</option>
+            <option value="year-desc">Sort: newest</option>
+            <option value="year-asc">Sort: oldest</option>
+            <option value="rank">Sort: search rank</option>
+          </select>
+          <select id="papers-filter-type" title="Filter by study type">
+            <option value="all">All types</option>
+            <option value="clinical">Clinical</option>
+            <option value="preclinical">Preclinical</option>
+            <option value="review">Reviews</option>
+            <option value="real-world">Real-world</option>
+          </select>
+        </div>
+      </div>
+      <ol id="papers-list" class="papers-list"></ol>
+    </aside>
+
+    <article class="briefing-pane">
+      <div class="pane-header">
+        <h2>Briefing</h2>
+        <div class="pane-actions">
+          <button id="create-note-btn" type="button" class="ghost-btn f-btn f-btn--ghost" disabled
+                  title="Jump to the notes scratchpad">Create note
+          </button>
+          <div class="dropdown" id="download-dropdown">
+            <button id="download-btn" type="button" class="ghost-btn f-btn f-btn--secondary" disabled aria-haspopup="true" aria-expanded="false">
+              Download <span aria-hidden="true">▾</span>
+            </button>
+            <ul id="download-menu" class="dropdown-menu" role="menu" hidden>
+              <li role="none">
+                <button type="button" role="menuitem" data-format="md">
+                  <span class="dd-label">Markdown (.md)</span>
+                </button>
+              </li>
+              <li role="none">
+                <button type="button" role="menuitem" data-format="pdf">
+                  <span class="dd-label">PDF (browser print)</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+          <span id="briefing-meta" class="muted"></span>
+        </div>
+      </div>
+      <div id="briefing-render" class="briefing-render">
+        <div class="briefing-placeholder">
+          <div class="placeholder-headline">Preparing your briefing</div>
+          <div id="placeholder-subline" class="placeholder-subline">Starting the search…</div>
+          <div class="placeholder-skeleton" aria-hidden="true">
+            <div class="sk-block sk-h"></div>
+            <div class="sk-block sk-line"></div>
+            <div class="sk-block sk-line sk-line-3q"></div>
+            <div class="sk-block sk-line sk-line-half"></div>
+            <div class="sk-block sk-h sk-h-2"></div>
+            <div class="sk-block sk-line"></div>
+            <div class="sk-block sk-line sk-line-3q"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes: free-text scratchpad attached to a briefing. Debounced
+           autosave on input; loads from Supabase when a past briefing
+           opens. Hidden until a briefing exists. -->
+      <section id="notes-section" class="notes-section" hidden>
+        <div class="notes-header">
+          <h3>Notes</h3>
+          <span id="notes-status" class="muted">Saved</span>
+        </div>
+        <textarea
+          id="notes-input"
+          rows="6"
+          placeholder="Scratchpad - questions for your PI, follow-ups, hypotheses, sequencing to request. Autosaves."></textarea>
+      </section>
+    </article>
+  </div>
+
+  <footer class="footer muted">
+    <span>Open source, MIT licensed</span>
+    <span>·</span>
+    <span>Featherless-powered domain agent for the AI Agent Olympics 2026</span>
+  </footer>
+
+  </main>
+
+</div><!-- /.f-shell -->
+
+  <!-- Modal: paper detail (abstract + AI extraction). Lives outside the
+       grid so backdrop covers the entire viewport. -->
+  <div id="paper-modal" class="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <header class="modal-header">
+        <h3 id="paper-modal-title">Paper</h3>
+        <button id="paper-modal-close" type="button" aria-label="Close">×</button>
+      </header>
+      <div id="paper-modal-body" class="modal-body"></div>
+    </div>
+  </div>
+</body>
+</html>

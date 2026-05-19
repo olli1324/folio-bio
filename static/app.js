@@ -742,7 +742,7 @@
     ).length;
     cover.innerHTML = `
       <img class="cover-logo" src="/static/logo-tagline.png"
-           alt="Folio — science summarized, decisions accelerated"
+           alt="Folio logo"
            onerror="this.onerror=null; this.src='/static/logo.png'; this.onerror=()=>this.style.display='none';" />
       <div class="eyebrow">Folio · Drug-discovery research briefing</div>
       <h1 class="cover-title">Research Briefing</h1>
@@ -1318,6 +1318,44 @@
     } catch (_) { /* ignore — local state still cleared */ }
   }
 
+  // Decode the payload segment of a JWT (no signature verification — the
+  // signature is verified server-side on every authed request). Used only
+  // to pull `email` + `sub` out of a fresh access_token we received via
+  // the URL hash after a Supabase email-confirmation redirect.
+  function decodeJwtPayload(token) {
+    try {
+      const part = token.split(".")[1];
+      const b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = b64 + "===".slice((b64.length + 3) % 4);
+      const json = atob(padded);
+      return JSON.parse(json);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Consume `#access_token=...&refresh_token=...&type=signup` from the URL
+  // fragment that Supabase appends when redirecting back from a confirmation
+  // email. Persists the session into localStorage and strips the hash so a
+  // reload doesn't try to re-import an expired token.
+  function consumeAuthHashIfAny() {
+    if (!window.location.hash || window.location.hash.length < 2) return;
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = params.get("access_token");
+    if (!accessToken) return;
+    const payload = decodeJwtPayload(accessToken);
+    if (!payload || !payload.email || !payload.sub) return;
+    saveAuthState({
+      access_token: accessToken,
+      refresh_token: params.get("refresh_token") || null,
+      email: payload.email,
+      user_id: payload.sub,
+    });
+    // Clean the URL so the token never sits in browser history / referer.
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    // The unconditional loadHistory() at boot will pick up the new authState.
+  }
+
   // --- Auth UI state ---------------------------------------------------
 
   function renderAuthState() {
@@ -1440,6 +1478,12 @@
     });
   }
   if (els.authForm) els.authForm.addEventListener("submit", handleAuthSubmit);
+
+  // If we returned here from a Supabase email confirmation / recovery /
+  // OAuth redirect, the URL fragment carries an access_token. Consume it
+  // once, persist as authState, and scrub the URL so reloads don't re-run
+  // the import. Runs before renderAuthState() so the panel paints signed-in.
+  consumeAuthHashIfAny();
 
   // Paint initial auth UI based on whatever's in localStorage.
   renderAuthState();
